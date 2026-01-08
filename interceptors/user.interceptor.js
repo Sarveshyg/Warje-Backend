@@ -303,7 +303,7 @@ const validateUserUpdate = (req, res, next) => {
     }
 };
 
-const isNotTempUser = async (data, supabase) => {
+const isNotTempUser = async (data) => {
     console.log(data);
     const { email_id } = data;
 
@@ -315,6 +315,7 @@ const isNotTempUser = async (data, supabase) => {
 
     // Supabase unexpected error
     if (error && error.code !== "PGRST116") {
+        console.log(error)
         throw {
             code: STATUS.INTERNAL_SERVER_ERROR,
             message: "Database error",
@@ -324,10 +325,10 @@ const isNotTempUser = async (data, supabase) => {
 
     // User exists in temp_users
     if (tempUser) {
+        console.log(tempUser)
         throw {
             code: STATUS.FORBIDDEN,
-            message:
-                "User registration is pending admin approval. You cannot login or signup again yet."
+            message: "User registration is pending admin approval. You cannot login or signup again yet."
         };
     }
 

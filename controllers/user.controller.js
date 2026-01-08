@@ -11,6 +11,7 @@ const sendOTP = async (req, res) => {
         const data = req.body;
 
         const response = await userService.sendOtpService(data);
+        console.log("RESPONSE: ", response)
 
         return res.status(STATUS.OK).json(response);
 
@@ -24,7 +25,7 @@ const sendOTP = async (req, res) => {
         }
 
         errorResponseBody.message = "Something went wrong.";
-        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(errorResponseBody);
     }
 }
 
