@@ -6,15 +6,10 @@
       "use": "@vercel/node"
     },
     {
-      "src": "cleanup-otp.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "sent-notification.js",
+      "src": "cron-daily.js",
       "use": "@vercel/node"
     }
   ],
-
   "headers": [ 
     {
       "source": "/(.*)",
@@ -36,12 +31,8 @@
   ],
   "rewrites": [ 
     {
-      "source": "/api/cron/send-notifications",
-      "destination": "/sent-notification.js"
-    },
-    {
-      "source": "/cleanup-otp",
-      "destination": "/cleanup-otp.js" 
+      "source": "/api/cron/daily-maintenance",
+      "destination": "/cron-daily.js"
     },
     {
       "source": "/(.*)",
@@ -50,12 +41,8 @@
   ],
   "crons": [
     {
-      "path": "/cleanup-otp",
-      "schedule": "0 16 * * *"
-    },
-    {
-      "path": "/api/cron/send-notifications",
-      "schedule": "0 8 * * *" 
+      "path": "/api/cron/daily-maintenance",
+      "schedule": "30 3 * * *" 
     }
   ]
 }
