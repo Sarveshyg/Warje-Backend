@@ -183,7 +183,7 @@ const sendOtpService = async (data) => {
         let subjectText = "Your One-Time Password";
         if (upperPurpose === OTP_PURPOSE.SIGNUP) subjectText = "Your Verification Code for Signup";
         else if (upperPurpose === OTP_PURPOSE.SIGNIN) subjectText = "Your One-Time Password for Signin";
-        else if (upperPurpose === OTP_PURPOSE.RESET_PASSWORD) subjectText = "Password Reset Verification Code";
+        else if (upperPurpose === OTP_PURPOSE.RESET_PASSWORD) upperPurpose = "RESET PASSWORD", subjectText = "Password Reset Verification Code";
 
         // 7. Send Email
         const mailOptions = {
