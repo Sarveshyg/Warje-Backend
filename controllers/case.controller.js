@@ -428,84 +428,52 @@ const deleteCase = async (req, res) => {
 }
 
 const getCase = async (req, res) => {
-    const caseNumber = req.query.case_number; // Get from Query
+    const { case_number } = req.query;
 
     try {
-        // ==================================================
-        // SCENARIO 1: Specific Case Requested
-        // ==================================================
-        if (caseNumber) {
-            const { data, error } = await supabase
-                .from("cases")
-                .select(`
-                    case_id,
-                    case_number,
-                    title,
-                    status,
-                    priority,
-                    deadline,
-                    section_under_ipc,
-                    created_at,
-                    updated_at
-                `)
-                .eq("case_number", caseNumber)
-                .eq("is_deleted", false) // Filter Soft Delete
-                .maybeSingle();
+        const columns = `
+            case_id, case_number, title, status, priority, deadline, 
+            section_under_ipc, created_at, updated_at, under_7_years, stage
+        `;
 
-            if (error) throw error;
+        let query = supabase
+            .from("cases")
+            .select(columns)
+            .eq("is_deleted", false);
 
-            if (!data) {
-                const response = { ...errorResponseBody };
-                response.message = "Case Not Found";
-                response.err = { 
-                    details: `Case '${caseNumber}' does not exist or has been deleted.` 
-                };
-                return res.status(STATUS.NOT_FOUND).json(response);
-            }
-
-            const response = { ...successResponseBody };
-            response.message = "Case details retrieved successfully.";
-            response.data = data; // Returns a single Object
-
-            return res.status(STATUS.OK).json(response);
+        if (case_number) {
+            query = query.eq("case_number", case_number).maybeSingle();
+        } else {
+            query = query.order('created_at', { ascending: false });
         }
 
-        // ==================================================
-        // SCENARIO 2: Fetch ALL Active Cases
-        // ==================================================
-        const { data, error } = await supabase
-            .from("cases")
-            .select(`
-                case_id,
-                case_number,
-                title,
-                status,
-                priority,
-                deadline,
-                section_under_ipc,
-                created_at
-            `)
-            .eq("is_deleted", false) // Filter Soft Delete
-            .order('created_at', { ascending: false }); // Latest first
-
+        const { data, error } = await query;
         if (error) throw error;
 
-        const response = { ...successResponseBody };
-        response.message = "All active cases retrieved successfully.";
-        response.data = data; // Returns an Array of Objects
+        if (case_number && !data) {
+            return res.status(STATUS.NOT_FOUND).json({
+                ...errorResponseBody,
+                message: "Case Not Found",
+                err: { details: `Case '${case_number}' does not exist or has been deleted.` }
+            });
+        }
 
-        return res.status(STATUS.OK).json(response);
+        // 6. Return Success
+        return res.status(STATUS.OK).json({
+            ...successResponseBody,
+            message: case_number ? "Case details retrieved successfully." : "All active cases retrieved successfully.",
+            data: data
+        });
 
     } catch (error) {
         console.error("Get Case Error:", error);
-
-        const response = { ...errorResponseBody };
-        response.message = "Internal Server Error";
-        response.err = { details: error.message };
-
-        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+            ...errorResponseBody,
+            message: "Internal Server Error",
+            err: { details: error.message }
+        });
     }
-}
+};
 
 export default {
     createCase,
