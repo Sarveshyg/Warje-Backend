@@ -264,7 +264,7 @@ const getCaseByEmailId = async (req, res) => {
         const { data, error } = await supabase
             .from('case_users')
             .select(`
-                    cases!inner (  // <--- Changed to !inner to enforce the filter
+                    cases!inner (  
                         case_id, 
                         title, 
                         status, 
@@ -272,7 +272,9 @@ const getCaseByEmailId = async (req, res) => {
                         priority, 
                         created_at, 
                         case_number, 
-                        section_under_ipc
+                        section_under_ipc,
+                        stage,
+                        under_7_years
                     ),
                     users!inner(email_id)
                 `)
@@ -282,8 +284,8 @@ const getCaseByEmailId = async (req, res) => {
         if (error) throw error;
 
         const processedCaseList = (data || [])
-            .map(item => item.cases) // Extract just the 'cases' object
-            .filter(caseItem => caseItem !== null) // Safety check for nulls
+            .map(item => item.cases) 
+            .filter(caseItem => caseItem !== null)
             .map(caseItem => ({
                 ...caseItem,
             }));
@@ -326,7 +328,7 @@ const updateCase = async (req, res) => {
             .update(updates)
             .eq("case_number", caseNumber)
             .eq('is_deleted', false)
-            .select("case_number, title, status, priority, deadline, section_under_ipc")
+            .select("case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage")
             .single();
 
         if (error) throw error;

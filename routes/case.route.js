@@ -17,22 +17,6 @@ router.post(
     caseController.createCase
 );
 
-// {can get all case or specific case by query params-> case_number='___'}
-router.get(
-    "/",
-    validateStrictBody([""]),
-    caseIntercetor.validateGetCase,
-    caseController.getCase
-)
-
-// get users case count with user_id or without user id which includes both status also
-router.get(
-    "/count/", 
-    validateStrictBody([""]),
-    caseIntercetor.validateGetOfficersCasesCount, 
-    caseController.getOfficersCaseCount
-);
-
 // get case by user-id
 router.get(
     "/:user_id", 
@@ -47,6 +31,22 @@ router.get(
     validateStrictBody(["email_id"]), 
     caseIntercetor.validateGetCaseEmailId, 
     caseController.getCaseByEmailId
+);
+
+// {can get all case or specific case by query params-> case_number='___'}
+router.get(
+    "/",
+    validateStrictBody([""]),
+    caseIntercetor.validateGetCase,
+    caseController.getCase
+)
+
+// get users case count with user_id or without user id which includes both status also
+router.get(
+    "/count/", 
+    validateStrictBody([""]),
+    caseIntercetor.validateGetOfficersCasesCount, 
+    caseController.getOfficersCaseCount
 );
 
 router.patch(

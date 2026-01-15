@@ -238,7 +238,7 @@ const validateGetCaseEmailId = async (req, res, next) => {
         response.err = {
             email_id: "Email ID is missing from the request body."
         };
-        return res.status(400).json(response);
+        return res.status(STATUS.BAD_REQUEST).json(response);
     }
 
     if (!validator.isEmail(email_id)) {
@@ -247,7 +247,7 @@ const validateGetCaseEmailId = async (req, res, next) => {
         response.err = {
             email_id: "Invalid email format provided."
         };
-        return res.status(400).json(response);
+        return res.status(STATUS.BAD_REQUEST).json(response);
     }
 
     try {
@@ -271,12 +271,12 @@ const validateGetCaseEmailId = async (req, res, next) => {
             details: error.message || "An unexpected error occurred during validation."
         };
 
-        return res.status(500).json(response);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
     }
 }
 
 const validateCaseUpdate = async (req, res, next) => {
-    const { case_number, title, status, priority, deadline, section_under_ipc } = req.body;
+    const { case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage } = req.body;
 
     if (!case_number) {
         const response = { ...errorResponseBody };
@@ -293,12 +293,14 @@ const validateCaseUpdate = async (req, res, next) => {
     if (priority) updates.priority = priority;
     if (deadline) updates.deadline = deadline;
     if (section_under_ipc) updates.section_under_ipc = section_under_ipc;
+    if (under_7_years !== undefined) updates.under_7_years = under_7_years
+    if (stage !== undefined && stage >= 1) updates.stage = stage
 
     if (Object.keys(updates).length === 0) {
         const response = { ...errorResponseBody };
         response.message = "Validation Failed";
         response.err = {
-            details: "No valid fields provided for update. Please provide at least one field (title, status, priority, deadline, or section_under_ipc)."
+            details: "No valid fields provided for update. Please provide at least one field (title, status, priority, deadline, under_7_years, stage, or section_under_ipc)."
         };
         return res.status(STATUS.BAD_REQUEST).json(response);
     }
