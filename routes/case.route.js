@@ -17,6 +17,7 @@ router.post(
     caseController.createCase
 );
 
+// {can get all case or specific case by query params-> case_number='___'}
 router.get(
     "/",
     validateStrictBody([""]),
@@ -24,17 +25,9 @@ router.get(
     caseController.getCase
 )
 
-// specific user --> get total case count
+// get users case count with user_id or without user id which includes both status also
 router.get(
-    "/count/:user_id", 
-    validateStrictBody([""]),
-    caseIntercetor.validateTotalCaseCount, 
-    caseController.getTotalCaseCount
-);
-
-// get users case count {name: count}
-router.get(
-    "/user-count/", 
+    "/count/", 
     validateStrictBody([""]),
     caseIntercetor.validateGetOfficersCasesCount, 
     caseController.getOfficersCaseCount

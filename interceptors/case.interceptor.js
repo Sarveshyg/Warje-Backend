@@ -144,38 +144,6 @@ const validateCase = [
     validateUnder7Years
 ];
 
-const validateTotalCaseCount = async (req, res, next) => {
-    const officerId = req.params.user_id;
-
-    if (!officerId || !UUIDCASE.CASE.test(officerId)) {
-        const response = { ...errorResponseBody };
-
-        response.message = "Validation Failed";
-        response.err = {
-            user_id: "Invalid officer ID provided. The ID must be a valid UUID format."
-        };
-
-        return res.status(400).json(response);
-    }
-
-    try {
-        await isUser({ user_id: officerId });
-        next();
-    } catch (error) {
-        if (error.code) {
-            const response = { ...errorResponseBody };
-            response.message = error.message;
-            response.err = error.err;
-            return res.status(error.code).json(response);
-        }
-        const response = { ...errorResponseBody };
-        response.message = "Something went wrong";
-        response.err = { details: error.message };
-
-        return res.status(500).json(response);
-    }
-}
-
 const validateGetOfficersCasesCount = async (req, res, next) => {
     const currentUser = req.user;
     const officerId = req.query.user_id;
@@ -398,7 +366,6 @@ const validateGetCase = async (req, res, next) => {
 
 export default {
     validateCase,
-    validateTotalCaseCount,
     validateGetOfficersCasesCount,
     validateGetCaseId,
     validateGetCaseEmailId,

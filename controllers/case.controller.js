@@ -109,40 +109,6 @@ const createCase = async (req, res) => {
     }
 }
 
-const getTotalCaseCount = async (req, res) => {
-    try {
-        const officerId = req.params.user_id;
-
-        const { count, error } = await supabase
-            .from('case_users')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', officerId);
-
-        if (error) throw error;
-
-        const response = { ...successResponseBody };
-
-        response.message = "Total assigned cases count retrieved successfully.";
-        response.data = {
-            total_cases_assigned: count || 0
-        };
-
-        return res.status(STATUS.OK).json(response);
-
-    } catch (error) {
-        console.error("Get total cases count error:", error);
-
-        const response = { ...errorResponseBody };
-
-        response.message = "Internal Server Error";
-        response.err = {
-            details: error.message || "An unexpected error occurred while fetching the case count."
-        };
-
-        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
-    }
-}
-
 const getOfficersCaseCount = async (req, res) => {
     const officerId = req.query.user_id;
     const status = req.query.status;
@@ -198,6 +164,16 @@ const getOfficersCaseCount = async (req, res) => {
         // SCENARIO 2: ID Provided -> SPECIFIC OFFICER STATS
         // ==================================================
 
+        // 1. First, fetch the User's Name
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('name')
+            .eq('user_id', officerId)
+            .single(); // Use single() since we expect one user
+
+        if (userError) throw userError;
+
+        // 2. Then, fetch the Case Count (Existing Logic)
         let query = supabase
             .from('case_users')
             .select(
@@ -214,13 +190,14 @@ const getOfficersCaseCount = async (req, res) => {
 
         if (error) throw error;
 
+        // 3. Construct Response
         const response = { ...successResponseBody };
         response.message = status
             ? `Officer's ${status} case count retrieved.`
             : "Officer's total case count retrieved.";
 
         response.data = {
-            user_id: officerId,
+            name: userData.name,  
             status: status || 'All',
             count: count || 0
         };
@@ -240,7 +217,7 @@ const getCaseById = async (req, res) => {
     const officerId = req.params.user_id;
 
     try {
-        const selectString = "cases(case_number, title, status, priority, created_at, deadline, section_under_ipc)";
+        const selectString = "cases(case_number, title, status, priority, created_at, deadline, section_under_ipc, under_7_years, stage)";
 
         const { data, error } = await supabase
             .from('case_users')
@@ -257,7 +234,7 @@ const getCaseById = async (req, res) => {
                 };
             }
             return null;
-        }).filter(item => item !== null); // Remove any nulls if join failed
+        }).filter(item => item !== null); 
 
         const response = { ...successResponseBody };
 
@@ -477,7 +454,6 @@ const getCase = async (req, res) => {
 
 export default {
     createCase,
-    getTotalCaseCount,
     getOfficersCaseCount,
     getCaseById,
     getCaseByEmailId,
