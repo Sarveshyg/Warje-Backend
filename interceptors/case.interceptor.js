@@ -121,6 +121,19 @@ const validateSectionIPC = (req, res, next) => {
     next();
 };
 
+const validateUnder7Years = (req, res, next) => {
+    const { under_7_years } = req.body;
+
+    if (under_7_years !== undefined && typeof under_7_years !== "boolean") {
+        return res.status(400).json({
+            status: "error",
+            message: "Invalid format for under_7_years. Must be true or false."
+        });
+    }
+
+    next();
+};
+
 const validateCase = [
     validateCaseNumber,
     validateTitle,
@@ -128,6 +141,7 @@ const validateCase = [
     validatePriority,
     validateDeadline,
     validateOfficerEmails,
+    validateUnder7Years
 ];
 
 const validateTotalCaseCount = async (req, res, next) => {

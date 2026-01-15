@@ -4,22 +4,19 @@ import { errorResponseBody, successResponseBody } from "../utils/responseBody.js
 
 const createCase = async (req, res) => {
     try {
-        const { case_number, title, priority, assigned_officer_emails, section_under_ipc, deadline } = req.body;
+        const { case_number, title, priority, assigned_officer_emails, section_under_ipc, deadline, under_7_years } = req.body;
 
-        // --- VALIDATION STEP ---
-        if (!case_number || !title || !priority || !section_under_ipc || !Array.isArray(assigned_officer_emails)) {
-            // CLONE the template first to avoid bugs
+        if (!case_number || !title || !priority || !section_under_ipc || under_7_years == undefined || !Array.isArray(assigned_officer_emails)) {
             const response = { ...errorResponseBody };
             response.message = "Validation Failed";
             response.err = {
-                details: "Missing required fields: case_number, title, priority, section_under_ipc, and assigned_officer_emails."
+                details: "Missing required fields: case_number, title, priority, section_under_ipc, under_7_years and assigned_officer_emails."
             };
-            return res.status(400).json(response);
+            return res.status(STATUS.BAD_REQUEST).json(response);
         }
 
         let officerIds = [];
 
-        // --- OFFICER LOOKUP STEP ---
         if (assigned_officer_emails.length > 0) {
             const cleanEmails = assigned_officer_emails.map(email => email.toLowerCase().trim());
 
@@ -41,18 +38,18 @@ const createCase = async (req, res) => {
                     details: "One or more assigned officers are not registered in the system.",
                     missing_officers: missingEmails
                 };
-                return res.status(404).json(response);
+                return res.status(STATUS.NOT_FOUND).json(response);
             }
 
             officerIds = officers.map(officer => officer.user_id);
         }
 
-        // --- CASE CREATION STEP ---
         const newCaseData = {
             case_number: case_number.trim(),
             title: title.trim(),
             priority,
             section_under_ipc,
+            under_7_years,
             ...(deadline && { deadline }),
         };
 
@@ -78,7 +75,6 @@ const createCase = async (req, res) => {
 
         const newCaseId = insertedCase.case_id;
 
-        // --- ASSIGNMENT STEP ---
         if (officerIds.length > 0) {
             const joinRecords = officerIds.map(userId => ({
                 case_id: newCaseId,
@@ -98,7 +94,7 @@ const createCase = async (req, res) => {
             case_number: newCaseData.case_number
         };
 
-        return res.status(201).json(response);
+        return res.status(STATUS.CREATED).json(response);
 
     } catch (error) {
         console.error("Create Case Error:", error);
@@ -109,7 +105,7 @@ const createCase = async (req, res) => {
             details: error.message || "An unexpected error occurred."
         };
 
-        return res.status(500).json(response);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
     }
 }
 

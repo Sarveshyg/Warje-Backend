@@ -12,7 +12,7 @@ router.use(checkTokenRefresh);
 
 router.post(
     "/", 
-    validateStrictBody(["case_number", "title", "priority", "assigned_officer_emails", "section_under_ipc", "deadline"]),
+    validateStrictBody(["case_number", "title", "priority", "assigned_officer_emails", "section_under_ipc", "deadline", "under_7_years"]),
     caseIntercetor.validateCase, 
     caseController.createCase
 );
