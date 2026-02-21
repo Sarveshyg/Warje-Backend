@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer"
 import dotenv from "dotenv"
-import { supabase } from "../supabase.js";
+import { supabase } from "../config/supabase.js";
 import bcrypt from "bcrypt";
 
 import { STATUS, OTP_PURPOSE } from '../utils/constants.js';

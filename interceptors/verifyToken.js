@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
-import { supabase } from "../supabase.js";
+import { supabase } from "../config/supabase.js";
 
 export async function verifyToken(req, res, next) {
     const authHeader = req.headers.authorization;

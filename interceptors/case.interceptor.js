@@ -1,5 +1,5 @@
 import validator from "validator";
-import { supabase } from "../supabase.js"
+import { supabase } from "../config/supabase.js"
 import { CASE_PRIORITY, CASE_STATUS, STATUS, UUIDCASE } from "../utils/constants.js";
 import { isAdmin, isUser } from "./user.interceptor.js";
 import { errorResponseBody } from "../utils/responseBody.js";

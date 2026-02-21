@@ -1,4 +1,4 @@
-import { supabase } from "../supabase.js"
+import { supabase } from "../config/supabase.js"
 import bcrypt, { hash } from "bcryptjs"
 
 import { STATUS, USER_ROLE } from "../utils/constants.js"

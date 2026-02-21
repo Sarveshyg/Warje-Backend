@@ -1,4 +1,4 @@
-import { supabase } from "../supabase.js";
+import { supabase } from "../config/supabase.js";
 import { STATUS, USER_RANK, REGEX } from '../utils/constants.js';
 
 const createErrorResponse = (field, message) => {

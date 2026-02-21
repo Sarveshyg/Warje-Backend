@@ -1,4 +1,4 @@
-import { supabase } from "../supabase.js";
+import { supabase } from "../config/supabase.js";
 
 import { STATUS, REGEX, USER_RANK, USER_ROLE } from '../utils/constants.js';
 import { errorResponseBody } from "../utils/responseBody.js";

@@ -1,4 +1,4 @@
-import { supabase } from "../supabase.js"
+import { supabase } from "../config/supabase.js"
 import { STATUS } from "../utils/constants.js";
 import { errorResponseBody, successResponseBody } from "../utils/responseBody.js";
 

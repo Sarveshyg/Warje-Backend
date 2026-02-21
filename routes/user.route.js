@@ -1,14 +1,17 @@
 import express from "express"
+
 import userController from "../controllers/user.controller.js"
 import userIntercetor from "../interceptors/user.interceptor.js"
 import { verifyToken } from "../interceptors/verifyToken.js"
 import { checkTokenRefresh } from "../interceptors/checkTokenRefresh.js"
 import { validateStrictBody } from "../interceptors/auth.interceptor.js"
+import { userSearchLimiter, otpLimiter } from "../interceptors/rate_limiter.js"
 
 const router = express.Router()
 
 router.post(
     "/send-otp", 
+    otpLimiter,
     userIntercetor.validateOtpReq, 
     userController.sendOTP
 ); 
@@ -25,18 +28,21 @@ router.use(checkTokenRefresh);
 
 router.get(
     "/admin/:user_id",
+    userSearchLimiter,
     validateStrictBody([""]),
     userController.isAdmin
 )
 
 router.patch(
     "/:id", 
+    userSearchLimiter,
     userIntercetor.validateUserUpdate, 
     userController.updateUser
 );
 
 router.delete(
     "/:id", 
+    userSearchLimiter,
     validateStrictBody([""]),
     userIntercetor.validateUserDeletion, 
     userController.deleteUser
@@ -44,6 +50,7 @@ router.delete(
 
 router.patch(
     "/:id/status",
+    userSearchLimiter,
     validateStrictBody([""]),
     userIntercetor.validateUpdateDeleted,
     userController.updateIsDeleted
@@ -51,6 +58,7 @@ router.patch(
 
 router.patch(
     "/:id/role", 
+    userSearchLimiter,
     validateStrictBody([""]),
     userIntercetor.validateRole, 
     userController.changeRole
@@ -58,6 +66,7 @@ router.patch(
 
 router.patch(
     "/:id/verified", 
+    userSearchLimiter,
     validateStrictBody([""]),
     userIntercetor.validateUserVerified, 
     userController.makeUserVerified
@@ -65,6 +74,7 @@ router.patch(
 
 router.get(
     "/", 
+    userSearchLimiter,
     validateStrictBody([""]),
     userIntercetor.validateGetUsers, 
     userController.getUsers
@@ -72,6 +82,7 @@ router.get(
 
 router.get(
     "/unverified", 
+    userSearchLimiter,
     validateStrictBody([""]),
     userIntercetor.validateGetUnverifiedUsers, 
     userController.getUnverifiedUser
