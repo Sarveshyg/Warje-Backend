@@ -4,6 +4,7 @@ import { STATUS, USER_ROLE } from "../utils/constants.js"
 import { successResponseBody, errorResponseBody } from "../utils/responseBody.js"
 import userService from "../services/user.service.js"
 import { checkOTPExistence } from "../services/auth.service.js"
+import { hashPassword } from "../utils/hash.js"
 
 const sendOTP = async (req, res) => {
     try {
@@ -249,7 +250,7 @@ const resetPassword = async (req, res) => {
 
         await checkOTPExistence({ email_id, code });
 
-        const hashedPassword = await hashedPassword(password);
+        const hashedPassword = await hashPassword(password);
 
         const { data: updatedUser } = await supabase
             .from("users")

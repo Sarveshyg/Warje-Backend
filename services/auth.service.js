@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken"
 
 import { STATUS } from '../utils/constants.js';
 
-import { verfiyPassword, verifyOTP, hashPassword } from '../utils/hash.js'; 
+import { verifyPassword, verifyOTP, hashPassword } from '../utils/hash.js'; 
 
 export const checkOTPExistence = async(data) => {
     try {
@@ -143,7 +143,7 @@ const signinUser = async (data) => {
             .single()
             .throwOnError();
         
-        const isPasswordValid = await verfiyPassword(data.password, user.password);
+        const isPasswordValid = await verifyPassword(data.password, user.password);
 
         if(user.is_deleted) {
             throw {

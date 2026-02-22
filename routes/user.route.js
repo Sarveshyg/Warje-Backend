@@ -22,6 +22,7 @@ router.post(
     userController.sendOTP
 ); 
 
+// {email_id, password, code}
 router.patch(
     "/reset", 
     // resetPasswordLimiter,

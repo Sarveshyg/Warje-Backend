@@ -24,6 +24,6 @@ export const hashPassword = async (password) => {
 };
 
 // Verify Password
-export const verfiyPassword = async (plainPassword, hashPassword) => {
+export const verifyPassword = async (plainPassword, hashPassword) => {
     return await argon2.verify(hashPassword, plainPassword); // argon2 always : (hash, plain)
 }
