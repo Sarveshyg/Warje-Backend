@@ -13,7 +13,7 @@ router.post(
 
 router.post(
     "/signup", 
-    signupLimiter,
+    // signupLimiter,
     authInterceptor.checkUserNotExists,
     authInterceptor.validateSignUpRequest,
     authController.signup
@@ -21,7 +21,7 @@ router.post(
 
 router.post(
     "/signin", 
-    signinLimiter,
+    // signinLimiter,
     authInterceptor.validateSignInRequest, 
     authController.signin
 );

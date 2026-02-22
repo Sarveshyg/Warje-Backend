@@ -13,6 +13,7 @@ router.use(checkTokenRefresh);
 
 router.post(
     "/",
+    // caseSearchLimiter,
     validateStrictBody(["case_number", "title", "priority", "assigned_officer_emails", "section_under_ipc", "deadline", "under_7_years"]),
     caseIntercetor.validateCase,
     caseController.createCase
@@ -21,7 +22,7 @@ router.post(
 // search case by email_id
 router.post(
     "/search",
-    caseSearchLimiter,
+    // caseSearchLimiter,
     validateStrictBody(["email_id"]),
     caseIntercetor.validateGetCaseEmailId,
     caseController.getCaseByEmailId
@@ -30,7 +31,7 @@ router.post(
 // {can get all case or specific case by query params-> case_number='___'}
 router.get(
     "/",
-    caseSearchLimiter,
+    // caseSearchLimiter,
     validateStrictBody([""]),
     caseIntercetor.validateGetCase,
     caseController.getCase
@@ -39,7 +40,7 @@ router.get(
 // get case by user-id
 router.get(
     "/:user_id",
-    caseSearchLimiter,
+    // caseSearchLimiter,
     validateStrictBody([""]),
     caseIntercetor.validateGetCaseId,
     caseController.getCaseById
@@ -48,7 +49,7 @@ router.get(
 // get users case count with user_id or without user id which includes both status also
 router.get(
     "/count/",
-    caseSearchLimiter,
+    // caseSearchLimiter,
     validateStrictBody([""]),
     caseIntercetor.validateGetOfficersCasesCount,
     caseController.getOfficersCaseCount
@@ -56,14 +57,14 @@ router.get(
 
 router.patch(
     "/",
-    caseSearchLimiter,
+    // caseSearchLimiter,
     caseIntercetor.validateCaseUpdate,
     caseController.updateCase
 );
 
 router.delete(
     "/:case_number",
-    caseSearchLimiter,
+    // caseSearchLimiter,
     validateStrictBody([""]),
     caseIntercetor.validateCaseDeletion,
     caseController.deleteCase

@@ -23,32 +23,39 @@ export const globalLimiter = createLimiter(
     "Too many requests, try again after 15 minutes"
 )
 
+
+export const resetPasswordLimiter = createLimiter(
+    5,
+    15,
+    "Too many reset password request attempts, try again after 15 minutes"
+)
+
 // OTP — brute force protection
 export const otpLimiter = createLimiter(
     5,
     15,
-    "Too many otp attempts, try again after 15 minutes"
+    "Too many otp request attempts, try again after 15 minutes"
 )
 
 // Signin — brute force protection
 export const signinLimiter = createLimiter(
     10,
     15,
-    "Too many login attempts, try again after 15 minutes"
+    "Too many login request attempts, try again after 15 minutes"
 )
 
 // Signup — prevent fake accounts
 export const signupLimiter = createLimiter(
     5,
     15,
-    "Too many signup attempts, try again after 15 minutes"
+    "Too many signup request attempts, try again after 15 minutes"
 )
 
 // Case search — sensitive data protection
 export const caseSearchLimiter = createLimiter(
     10,
     15,
-    "Too many case attempts, try again after 15 minutes"
+    "Too many case requestattempts, try again after 15 minutes"
 )
 
 
@@ -56,5 +63,5 @@ export const caseSearchLimiter = createLimiter(
 export const userSearchLimiter = createLimiter(
     10,
     15,
-    "Too many user attempts, try again after 15 minutes"
+    "Too many user request attempts, try again after 15 minutes"
 )
