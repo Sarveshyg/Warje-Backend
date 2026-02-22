@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken"
 
 import { STATUS } from '../utils/constants.js';
 
-import { verfiyPassword, verifyOTP } from '../utils/hash.js'; 
+import { verfiyPassword, verifyOTP, hashPassword } from '../utils/hash.js'; 
 
 export const checkOTPExistence = async(data) => {
     try {
@@ -54,7 +54,7 @@ const signupUser = async (data) => {
     try {
         await checkOTPExistence(data);
 
-        const hashedPassword = await hashedPassword(data.password);
+        const hashedPassword = await hashPassword(data.password);
 
         const { data: responseFromTempUsers } = await supabase
             .from("temp_users")
