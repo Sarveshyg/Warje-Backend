@@ -36,10 +36,10 @@ export async function verifyToken(req, res, next) {
         }
 
         if (user.is_deleted) {
-             return res.status(403).json({ error: "Account deactivated. Please contact admin." });
+            return res.status(403).json({ error: "Account deactivated. Please contact admin." });
         }
 
-        req.user = { ...decoded, ...user }; 
+        req.user = { ...decoded, ...user };
         req.token = token;
 
         next();

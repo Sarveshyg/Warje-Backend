@@ -16,83 +16,97 @@ RESET_PASSWORD: allowedKeys: ["email_id", "purpose"],
 */
 
 router.post(
-    "/send-otp", 
+    "/send-otp",
     // otpLimiter,
-    userIntercetor.validateOtpReq, 
+    userIntercetor.validateOtpReq,
     userController.sendOTP
-); 
+);
 
 // {email_id, password, code}
 router.patch(
-    "/reset", 
+    "/reset",
     // resetPasswordLimiter,
     validateStrictBody(["email_id", "password", "code"]),
-    userIntercetor.validateResetPass, 
+    userIntercetor.validateResetPass,
     userController.resetPassword
 );
 
 router.use(verifyToken);
 router.use(checkTokenRefresh);
 
+// {}
+router.get(
+    "/",
+    // userSearchLimiter,
+    validateStrictBody([""]),
+    userIntercetor.validateGetUsers,
+    userController.getUsers
+);
+
+// to check if user has admin privileges
 router.get(
     "/admin/:user_id",
     // userSearchLimiter,
     validateStrictBody([""]),
     userController.isAdmin
-)
+);
 
+//{ name, rank, password }
 router.patch(
-    "/:id", 
+    "/:id",
     // userSearchLimiter,
-    userIntercetor.validateUserUpdate, 
+    userIntercetor.validateUserUpdate,
     userController.updateUser
 );
 
 router.delete(
-    "/:id", 
+    "/:id",
     // userSearchLimiter,
     validateStrictBody([""]),
-    userIntercetor.validateUserDeletion, 
+    userIntercetor.validateUserDeletion,
     userController.deleteUser
 );
 
+
+// to get all deleted users
+router.get(
+    "/deleted-users",
+    // userSearchLimiter,
+    validateStrictBody([""]),
+    userIntercetor.getDeletedUserVerification,
+    userController.getDeletedUsers,
+);
+
+// update delete user
 router.patch(
     "/:id/status",
     // userSearchLimiter,
     validateStrictBody([""]),
-    userIntercetor.validateUpdateDeleted,
-    userController.updateIsDeleted
-)
+    userIntercetor.updateDeletedUserValidate,
+    userController.updateDeleletedUser
+);
 
 router.patch(
-    "/:id/role", 
+    "/:id/role",
     // userSearchLimiter,
     validateStrictBody([""]),
-    userIntercetor.validateRole, 
+    userIntercetor.validateRole,
     userController.changeRole
-); 
+);
 
 router.patch(
-    "/:id/verified", 
+    "/:id/verified",
     // userSearchLimiter,
     validateStrictBody([""]),
-    userIntercetor.validateUserVerified, 
+    userIntercetor.validateUserVerified,
     userController.makeUserVerified
-); 
-
-router.get(
-    "/", 
-    // userSearchLimiter,
-    validateStrictBody([""]),
-    userIntercetor.validateGetUsers, 
-    userController.getUsers
 );
 
 router.get(
-    "/unverified", 
+    "/unverified",
     // userSearchLimiter,
     validateStrictBody([""]),
-    userIntercetor.validateGetUnverifiedUsers, 
+    userIntercetor.validateGetUnverifiedUsers,
     userController.getUnverifiedUser
 )
 

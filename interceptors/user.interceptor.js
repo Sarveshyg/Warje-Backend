@@ -238,9 +238,9 @@ const validateUserUpdate = (req, res, next) => {
             return res.status(STATUS.BAD_REQUEST).json(response);
         }
 
-        const { name, rank, email_id, password } = req.body;
+        const { name, rank, password } = req.body;
 
-        const ALLOWED_FIELDS = ["name", "rank", "email_id", "password"];
+        const ALLOWED_FIELDS = ["name", "rank", "password"];
         const receivedKeys = Object.keys(req.body);
         const extraKeys = receivedKeys.filter(key => !ALLOWED_FIELDS.includes(key));
 
@@ -273,14 +273,6 @@ const validateUserUpdate = (req, res, next) => {
             }
         }
 
-        if (email_id !== undefined) {
-            if (!REGEX.EMAIL.test(email_id)) {
-                const response = { ...errorResponseBody };
-                response.err = { email_id: "Invalid email format." };
-                return res.status(STATUS.BAD_REQUEST).json(response);
-            }
-        }
-
         if (password !== undefined) {
             if (password.length < 8) {
                 const response = { ...errorResponseBody };
@@ -292,7 +284,6 @@ const validateUserUpdate = (req, res, next) => {
         req.updates = {};
         if (name) req.updates.name = name;
         if (rank) req.updates.rank = rank;
-        if (email_id) req.updates.email_id = email_id;
         if (password) req.updates.password = password;
 
         next();
@@ -402,7 +393,7 @@ const validateUserDeletion = async (req, res, next) => {
     }
 };
 
-const validateUpdateDeleted = async (req, res, next) => {
+const updateDeletedUserValidate = async (req, res, next) => {
     const currentUser = req.user;
     const user_id = req.params.id;
 
@@ -445,6 +436,28 @@ const validateResetPass = [
     validateCode
 ];
 
+export const getDeletedUserVerification = async (req, res, next) => {
+    const currentUser = req.user;
+
+    try {
+        await isAdmin({ user_id: currentUser.user_id });
+        next();
+    }
+    catch (error) {
+        if (error.code) {
+            const response = { ...errorResponseBody };
+            response.message = error.message;
+            response.err = error.err;
+            return res.status(error.code).json(response);
+        }
+        const response = { ...errorResponseBody };
+        response.message = "Something went wrong";
+        response.err = { details: error.message };
+
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
+    }
+}
+
 export default {
     validateOtpReq,
     validateRole,
@@ -455,5 +468,6 @@ export default {
     validateUserDeletion,
     validateResetPass,
     isNotTempUser,
-    validateUpdateDeleted
+    updateDeletedUserValidate,
+    getDeletedUserVerification
 }

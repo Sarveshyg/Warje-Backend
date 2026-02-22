@@ -5,7 +5,7 @@ import { supabase } from "../config/supabase.js";
 import { STATUS, OTP_PURPOSE } from '../utils/constants.js';
 import { errorResponseBody, successResponseBody } from "../utils/responseBody.js";
 import userInterceptor from "../interceptors/user.interceptor.js";
-import { hashOTP } from "../utils/hash.js";
+import { hashOTP, hashPassword } from "../utils/hash.js";
 
 dotenv.config();
 
@@ -33,7 +33,7 @@ const updateUserService = async (data, user_id) => {
         }
 
         if (data.password) {
-            data.password = await hashedPassword(data.password);
+            data.password = await hashPassword(data.password);
         }
 
         const { data: updatedUser } = await supabase
@@ -280,4 +280,4 @@ const sendOtpService = async (data) => {
 export default {
     updateUserService,
     sendOtpService
-};
+};  

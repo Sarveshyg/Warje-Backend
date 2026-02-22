@@ -321,7 +321,7 @@ const deleteUser = async (req, res) => {
     }
 };
 
-const updateIsDeleted = async (req, res) => {
+const updateDeleletedUser = async (req, res) => {
     try {
         const user_id = req.params.id;
 
@@ -384,6 +384,46 @@ const isAdmin = async (req, res) => {
     }
 }
 
+const getDeletedUsers = async (req, res) => {
+    try {
+        const { data: deletedUsers, error } = await supabase
+            .from("users")
+            .select("user_id, name")
+            .eq("is_deleted", true)
+            .order("deleted_at", { ascending: false }) 
+            .throwOnError();
+
+        if (error) throw error;
+
+        // Check if any deleted users found
+        if (!deletedUsers || deletedUsers.length === 0) {
+            return res.status(404).json({
+                data: [],
+                code: 404,
+                message: "No deleted users found."
+            });
+        }
+
+        const response = { ...successResponseBody };
+        response.message = "Deleted users fetched successfully.";
+        response.data = deletedUsers;
+        response.count = deletedUsers.length
+
+        return res.status(STATUS.OK).json(response);
+    } catch (error) {
+        console.error("getDeleted User Error:", error);
+
+        if (error.code === 'PGRST116') {
+            errorResponseBody.err = { email_id: "User not found. Please sign up." };
+            errorResponseBody.message = "Authentication Failed";
+            return res.status(STATUS.NOT_FOUND).json(errorResponseBody);
+        }
+
+        errorResponseBody.message = "Internal server error during user deletion.";
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(errorResponseBody);
+    }
+};
+
 export default {
     sendOTP,
     changeRole,
@@ -393,6 +433,7 @@ export default {
     updateUser,
     deleteUser,
     resetPassword,
-    updateIsDeleted,
-    isAdmin
+    updateDeleletedUser,
+    isAdmin,
+    getDeletedUsers
 };

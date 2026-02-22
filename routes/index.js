@@ -5,7 +5,10 @@ import authRoutes from "./auth.route.js";
 
 const router = express.Router();
 
+
 router.use("/auth", authRoutes);
+
+// router.use(checkIfDeleted);
 router.use("/user", userRoutes);
 router.use("/case", caseRoutes);
 
