@@ -1,5 +1,4 @@
 import { supabase } from "../config/supabase.js"
-import bcrypt, { hash } from "bcryptjs"
 
 import { STATUS, USER_ROLE } from "../utils/constants.js"
 import { successResponseBody, errorResponseBody } from "../utils/responseBody.js"
@@ -250,7 +249,7 @@ const resetPassword = async (req, res) => {
 
         await checkOTPExistence({ email_id, code });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await hashedPassword(password);
 
         const { data: updatedUser } = await supabase
             .from("users")

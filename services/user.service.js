@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer"
 import dotenv from "dotenv"
 import { supabase } from "../config/supabase.js";
-import bcrypt from "bcrypt";
 
 import { STATUS, OTP_PURPOSE } from '../utils/constants.js';
 import { errorResponseBody, successResponseBody } from "../utils/responseBody.js";
 import userInterceptor from "../interceptors/user.interceptor.js";
+import { hashOTP } from "../utils/hash.js";
 
 dotenv.config();
 
@@ -33,7 +33,7 @@ const updateUserService = async (data, user_id) => {
         }
 
         if (data.password) {
-            data.password = await bcrypt.hash(data.password, 10);
+            data.password = await hashedPassword(data.password);
         }
 
         const { data: updatedUser } = await supabase
@@ -92,7 +92,9 @@ const updateUserService = async (data, user_id) => {
     }
 }
 
-const generateOTP = () => Math.floor(1000 + Math.random() * 9000);
+const generateOTP = () => {
+    return String(Math.floor(1000 + Math.random() * 9000)); 
+};
 
 const transporter = nodemailer.createTransport({
 	service: "gmail",
@@ -165,12 +167,15 @@ const sendOtpService = async (data) => {
         const code = generateOTP();
         const expiry_time = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
+        // hashed OTP
+        const hashedCode = await hashOTP(code);
+
         // 5. Save/Update OTP in Database
         const { error: upsertError } = await supabase
             .from("temp_users_otp")
             .upsert({
                 email_id,
-                code,
+                code: hashedCode,
                 expiry_time,
                 purpose: upperPurpose
             }, {
@@ -181,7 +186,7 @@ const sendOtpService = async (data) => {
 
         // 6. Prepare Email Subject
         let subjectText = "Your One-Time Password";
-        let displayPurpose = upperPurpose; // Variable for display in email body
+        let displayPurpose = upperPurpose; 
 
         if (upperPurpose === OTP_PURPOSE.SIGNUP) {
             subjectText = "Your Verification Code for Signup";

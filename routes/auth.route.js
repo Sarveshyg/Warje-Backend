@@ -11,6 +11,7 @@ router.post(
     authController.signout
 );
 
+// "name", "rank", "email_id", "password", "code",
 router.post(
     "/signup", 
     // signupLimiter,
@@ -19,6 +20,8 @@ router.post(
     authController.signup
 );
 
+
+// "email_id", "password", "code"
 router.post(
     "/signin", 
     // signinLimiter,

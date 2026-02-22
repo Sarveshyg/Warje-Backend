@@ -9,6 +9,12 @@ import { userSearchLimiter, otpLimiter, resetPasswordLimiter } from "../intercep
 
 const router = express.Router()
 
+/*
+SIGNUP: allowedKeys: ["name", "email_id", "purpose"],
+SIGNIN: allowedKeys: ["email_id", "purpose"],
+RESET_PASSWORD: allowedKeys: ["email_id", "purpose"],
+*/
+
 router.post(
     "/send-otp", 
     // otpLimiter,

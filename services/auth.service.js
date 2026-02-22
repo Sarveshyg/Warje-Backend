@@ -1,8 +1,9 @@
 import { supabase } from "../config/supabase.js"
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 
 import { STATUS } from '../utils/constants.js';
+
+import { verfiyPassword, verifyOTP } from '../utils/hash.js'; 
 
 export const checkOTPExistence = async(data) => {
     try {
@@ -12,8 +13,22 @@ export const checkOTPExistence = async(data) => {
             .eq("email_id", data.email_id) 
             .single()             
             .throwOnError();
-            
-        if (String(responseFromOtp.code) !== String(data.code)) {
+
+        await supabase.from("temp_users_otp").delete().eq("email_id", data.email_id);
+        const now = new Date();
+        const expiry = new Date(responseFromOtp.expiry_time);
+
+        if (expiry.getTime() < now.getTime()) {            
+            throw {
+                err: { otp: "OTP has expired. Please request a new one." },
+                code: STATUS.BAD_REQUEST,
+                message: "Validation Error"
+            };
+        }
+
+        const isValid = await verifyOTP(String(data.code), responseFromOtp.code);
+
+        if (!isValid) {
             throw {
                 err: { otp: "Invalid verification code." },
                 code: STATUS.BAD_REQUEST,
@@ -21,27 +36,12 @@ export const checkOTPExistence = async(data) => {
             };
         }
 
-        const now = new Date();
-        const expiry = new Date(responseFromOtp.expiry_time);
-
-        if (expiry.getTime() < now.getTime()) {
-            await supabase.from("temp_users_otp").delete().eq("email_id", data.email_id);
-            
-            throw {
-                err: { otp: "OTP has expired. Please request a new one." },
-                code: STATUS.BAD_REQUEST,
-                message: "Validation Error"
-            };
-        }
-        await supabase.from("temp_users_otp").delete().eq("email_id", data.email_id);
         return true;
         
     } catch (error) {
         if (error.code === 'PGRST116') {
             throw {
-                err: { 
-                    otp: "No OTP found. Please request a code." 
-                },
+                err: { otp: "No OTP found. Please request a code." },
                 code: STATUS.NOT_FOUND, 
                 message: "Resource Not Found"
             };
@@ -54,7 +54,7 @@ const signupUser = async (data) => {
     try {
         await checkOTPExistence(data);
 
-        const hashedPassword = await bcrypt.hash(data.password, 10);
+        const hashedPassword = await hashedPassword(data.password);
 
         const { data: responseFromTempUsers } = await supabase
             .from("temp_users")
@@ -143,7 +143,7 @@ const signinUser = async (data) => {
             .single()
             .throwOnError();
         
-        const isPasswordValid = await bcrypt.compare(data.password, user.password);
+        const isPasswordValid = await verfiyPassword(data.password, user.password);
 
         if(user.is_deleted) {
             throw {
