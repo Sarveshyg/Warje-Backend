@@ -39,6 +39,7 @@ router.get(
     "/",
     // userSearchLimiter,
     validateStrictBody([""]),
+    // userIntercetor.validateGetUsers,
     userController.getUsers
 );
 
