@@ -46,9 +46,10 @@ const signin = async(req, res) => {
         } else {
             successResponseBody.data = { ...user, token }; // app
         }
-        successResponseBody.data = result;
+        
         successResponseBody.message = "User sign in successfully.";
         
+        console.log(successResponseBody);
         return res.status(STATUS.CREATED).json(successResponseBody);
 
     } catch(error) {
