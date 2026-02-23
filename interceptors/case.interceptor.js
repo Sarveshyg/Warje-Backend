@@ -1,7 +1,7 @@
 import validator from "validator";
 import { supabase } from "../config/supabase.js"
 import { CASE_PRIORITY, CASE_STATUS, STATUS, UUIDCASE } from "../utils/constants.js";
-import { isAdmin, isUser } from "./user.interceptor.js";
+import { isAdminForBack, isUser } from "./user.interceptor.js";
 import { errorResponseBody } from "../utils/responseBody.js";
 
 const validatePriority = (req, res, next) => {
@@ -149,13 +149,6 @@ const validateGetOfficersCasesCount = async (req, res, next) => {
     const officerId = req.query.user_id;
     const status = req.query.status;
 
-    if (!currentUser.user_id || !UUIDCASE.CASE.test(currentUser.user_id)) {
-        const response = { ...errorResponseBody };
-        response.message = "Validation Failed";
-        response.err = { auth: "Invalid current user session." };
-        return res.status(STATUS.BAD_REQUEST).json(response);
-    }
-
     if (officerId && !UUIDCASE.CASE.test(officerId)) {
         const response = { ...errorResponseBody };
         response.message = "Validation Failed";
@@ -177,7 +170,16 @@ const validateGetOfficersCasesCount = async (req, res, next) => {
     }
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if (!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
+
         if (officerId) await isUser({ user_id: officerId });
         next();
     }
@@ -201,6 +203,8 @@ const validateGetCaseId = async (req, res, next) => {
 
     if (!officerId || !UUIDCASE.CASE.test(officerId)) {
         const response = { ...errorResponseBody };
+
+        console.log("HI");
 
         response.message = "Validation Failed";
         response.err = {
@@ -251,7 +255,15 @@ const validateGetCaseEmailId = async (req, res, next) => {
     }
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if (!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
 
         next();
     }
@@ -275,8 +287,23 @@ const validateGetCaseEmailId = async (req, res, next) => {
     }
 }
 
+const isUserInCase = async (data) => {
+    const { case_id, user_id } = data;
+    const { data: caseData, error } = await supabase
+        .from('case_users')
+        .select('case_id, user_id')
+        .eq('case_id', case_id)
+        .eq('user_id', user_id)
+        .maybeSingle();
+
+    if (error) throw error;
+
+    return caseData !== null; // returns true or false
+};
+
 const validateCaseUpdate = async (req, res, next) => {
-    const { case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage } = req.body;
+    const currentUser = req.user;
+    const { case_id, case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage } = req.body;
 
     if (!case_number) {
         const response = { ...errorResponseBody };
@@ -285,6 +312,54 @@ const validateCaseUpdate = async (req, res, next) => {
             case_number: "Case number is required to perform an update."
         };
         return res.status(STATUS.BAD_REQUEST).json(response);
+    }
+
+    if (!case_id) {
+        const response = { ...errorResponseBody };
+        response.message = "Validation Failed";
+        response.err = {
+            case_number: "Case id is required to perform an update."
+        };
+        return res.status(STATUS.BAD_REQUEST).json(response);
+    }
+
+    const { data: caseData, error } = await supabase
+        .from("cases")
+        .select("case_id, case_number")
+        .eq("case_id", case_id)
+        .eq("case_number", case_number)
+        .maybeSingle();
+
+    if (error) throw error;
+
+    if (!caseData) {
+        const response = { ...errorResponseBody };
+        response.message = "Validation Failed";
+        response.err = {
+            case_number: "Case number and Case ID do not belong to the same case."
+        };
+        return res.status(STATUS.BAD_REQUEST).json(response);
+    }
+
+    try {
+        const adminCheck = await isAdminForBack({ user_id: currentUser.user_id });
+        const assignedCheck = await isUserInCase({ case_id: case_id, user_id: currentUser.user_id });
+
+        if (!adminCheck && !assignedCheck) {
+            const response = { ...errorResponseBody };
+            response.message = "Validation Failed";
+            response.err = {
+                case_number: "You don't have privileges"
+            };
+            return res.status(STATUS.FORBIDDEN).json(response);
+        }
+    } catch (error) {
+        console.error("Permission Check Error:", error);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+            ...errorResponseBody,
+            message: "Internal Server Error",
+            err: { details: error.message }
+        });
     }
 
     const updates = {};
@@ -317,8 +392,8 @@ const validateCaseDeletion = async (req, res, next) => {
     if (!case_number) {
         const response = { ...errorResponseBody };
         response.message = "Validation Failed";
-        response.err = { 
-            case_number: "Case Number parameter is missing." 
+        response.err = {
+            case_number: "Case Number parameter is missing."
         };
         return res.status(STATUS.BAD_REQUEST).json(response);
     }
@@ -335,8 +410,8 @@ const validateCaseDeletion = async (req, res, next) => {
         if (!existingCase) {
             const response = { ...errorResponseBody };
             response.message = "Deletion Failed";
-            response.err = { 
-                case_number: `Case with number '${case_number}' not found.` 
+            response.err = {
+                case_number: `Case with number '${case_number}' not found.`
             };
             return res.status(STATUS.NOT_FOUND).json(response);
         }
@@ -357,7 +432,17 @@ const validateCaseDeletion = async (req, res, next) => {
 };
 
 const validateGetCase = async (req, res, next) => {
-    const caseNumber = req.query.case_number; 
+    const caseNumber = req.query.case_number;
+
+    if (caseNumber) {
+        req.targetCaseNumber = caseNumber;
+    }
+
+    next();
+};
+
+const getDeletedCaseValidate = async (req, res, next) => {
+    const caseNumber = req.query.case_number;
 
     if (caseNumber) {
         req.targetCaseNumber = caseNumber;
@@ -373,5 +458,6 @@ export default {
     validateGetCaseEmailId,
     validateCaseUpdate,
     validateCaseDeletion,
-    validateGetCase
+    validateGetCase,
+    getDeletedCaseValidate
 };

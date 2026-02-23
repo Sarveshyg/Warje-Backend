@@ -127,7 +127,15 @@ const validateRole = async (req, res, next) => {
     }
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if(!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
 
         next();
     }
@@ -164,7 +172,15 @@ const validateUserVerified = async (req, res, next) => {
     }
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if(!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
 
         next();
     }
@@ -187,7 +203,16 @@ const validateGetUsers = async (req, res, next) => {
     const currentUser = req.user;
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if(!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
+
         next();
 
     } catch (error) {
@@ -209,7 +234,15 @@ const validateGetUnverifiedUsers = async (req, res, next) => {
     const currentUser = req.user;
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if(!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
         next();
 
     } catch (error) {
@@ -327,7 +360,7 @@ const isNotTempUser = async (data) => {
     return true;
 };
 
-export const isAdmin = async (data) => {
+export const isAdminForBack = async (data) => {
     try {
         const { user_id } = data;
 
@@ -338,14 +371,15 @@ export const isAdmin = async (data) => {
             .single()
             .throwOnError();
 
-        if (user && user.role !== USER_ROLE.ADMIN) {
-            throw {
-                code: STATUS.FORBIDDEN,
-                message: "Access denied. Admin privileges required.",
-                err: { role: "Insufficient permissions" }
-            }
-        }
-        return true;
+        // if (user && user.role !== USER_ROLE.ADMIN) {
+        //     throw {
+        //         code: STATUS.FORBIDDEN,
+        //         message: "Access denied. Admin privileges required.",
+        //         err: { role: "Insufficient permissions" }
+        //     }
+        // }
+
+        return user.role === USER_ROLE.ADMIN; // true for admin otherwise, false
 
     } catch (error) {
         console.log("Is admin error: ", error);
@@ -375,7 +409,15 @@ const validateUserDeletion = async (req, res, next) => {
 
     try {
         if (!isSamePerson) {
-            await isAdmin({ user_id: currentUser.user_id });
+            const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+            if (!isUserAdmin) {
+                throw {
+                    code: STATUS.FORBIDDEN,
+                    message: "Access denied. Admin privileges required.",
+                    err: { role: "Insufficient permissions" }
+                }
+            }
         }
 
         next();
@@ -413,7 +455,16 @@ const updateDeletedUserValidate = async (req, res, next) => {
             }
         }
 
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if (!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
+
         next();
 
     } catch (error) {
@@ -440,7 +491,15 @@ export const getDeletedUserVerification = async (req, res, next) => {
     const currentUser = req.user;
 
     try {
-        await isAdmin({ user_id: currentUser.user_id });
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+
+        if (!isUserAdmin) {
+            throw {
+                code: STATUS.FORBIDDEN,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            }
+        }
         next();
     }
     catch (error) {

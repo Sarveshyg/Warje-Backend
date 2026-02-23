@@ -11,6 +11,7 @@ const router = express.Router()
 router.use(verifyToken);
 router.use(checkTokenRefresh);
 
+// {"case_number", "title", "priority", "assigned_officer_emails", "section_under_ipc", "deadline", "under_7_years"}
 router.post(
     "/",
     // caseSearchLimiter,
@@ -19,13 +20,30 @@ router.post(
     caseController.createCase
 );
 
-// search case by email_id
+// get case by email_id
 router.post(
     "/search",
     // caseSearchLimiter,
     validateStrictBody(["email_id"]),
     caseIntercetor.validateGetCaseEmailId,
     caseController.getCaseByEmailId
+);
+
+// get all deleted cases 
+router.get(
+    "/deleted-case",
+    // caseSearchLimiter
+    validateStrictBody([""]),
+    caseController.getDeletedCase
+);
+
+// get users case count with user_id or without user id which includes both status also
+router.get(
+    "/count",
+    // caseSearchLimiter,
+    validateStrictBody([""]),
+    caseIntercetor.validateGetOfficersCasesCount,
+    caseController.getOfficersCaseCount
 );
 
 // {can get all case or specific case by query params-> case_number='___'}
@@ -43,18 +61,10 @@ router.get(
     // caseSearchLimiter,
     validateStrictBody([""]),
     caseIntercetor.validateGetCaseId,
-    caseController.getCaseById
+    caseController.getCaseByUserID
 );
 
-// get users case count with user_id or without user id which includes both status also
-router.get(
-    "/count/",
-    // caseSearchLimiter,
-    validateStrictBody([""]),
-    caseIntercetor.validateGetOfficersCasesCount,
-    caseController.getOfficersCaseCount
-);
-
+// update case
 router.patch(
     "/",
     // caseSearchLimiter,
@@ -62,6 +72,7 @@ router.patch(
     caseController.updateCase
 );
 
+// delete case
 router.delete(
     "/:case_number",
     // caseSearchLimiter,

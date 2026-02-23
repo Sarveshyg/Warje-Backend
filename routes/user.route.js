@@ -86,6 +86,7 @@ router.patch(
     userController.updateDeleletedUser
 );
 
+// to change role
 router.patch(
     "/:id/role",
     // userSearchLimiter,
@@ -94,6 +95,7 @@ router.patch(
     userController.changeRole
 );
 
+// to make user verified
 router.patch(
     "/:id/verified",
     // userSearchLimiter,
@@ -102,6 +104,7 @@ router.patch(
     userController.makeUserVerified
 );
 
+// to get all users which are not verified
 router.get(
     "/unverified",
     // userSearchLimiter,

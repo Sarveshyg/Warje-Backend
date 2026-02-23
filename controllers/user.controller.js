@@ -397,9 +397,7 @@ const getDeletedUsers = async (req, res) => {
 
         // Check if any deleted users found
         if (!deletedUsers || deletedUsers.length === 0) {
-            return res.status(404).json({
-                data: [],
-                code: 404,
+            return res.status(STATUS.NOT_FOUND).json({
                 message: "No deleted users found."
             });
         }
@@ -419,7 +417,7 @@ const getDeletedUsers = async (req, res) => {
             return res.status(STATUS.NOT_FOUND).json(errorResponseBody);
         }
 
-        errorResponseBody.message = "Internal server error during user deletion.";
+        errorResponseBody.message = "Internal server error during user deletion retrieval";
         return res.status(STATUS.INTERNAL_SERVER_ERROR).json(errorResponseBody);
     }
 };

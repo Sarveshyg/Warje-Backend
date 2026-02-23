@@ -190,14 +190,14 @@ const getOfficersCaseCount = async (req, res) => {
 
         if (error) throw error;
 
-        // 3. Construct Response
+        // Construct Response
         const response = { ...successResponseBody };
         response.message = status
             ? `Officer's ${status} case count retrieved.`
             : "Officer's total case count retrieved.";
 
         response.data = {
-            name: userData.name,  
+            name: userData.name,
             status: status || 'All',
             count: count || 0
         };
@@ -213,11 +213,21 @@ const getOfficersCaseCount = async (req, res) => {
     }
 }
 
-const getCaseById = async (req, res) => {
+const getCaseByUserID = async (req, res) => {
     const officerId = req.params.user_id;
 
     try {
-        const selectString = "cases(case_number, title, status, priority, created_at, deadline, section_under_ipc, under_7_years, stage)";
+        const selectString = `
+            cases (
+                case_number, title, status, priority, created_at, 
+                deadline, section_under_ipc, under_7_years, stage,
+                case_users (
+                    users (
+                        name
+                    )
+                )
+            )
+        `;
 
         const { data, error } = await supabase
             .from('case_users')
@@ -227,17 +237,19 @@ const getCaseById = async (req, res) => {
 
         if (error) throw error;
 
-        const processedData = data.map(item => {
-            if (item.cases) {
-                return {
-                    ...item.cases,
-                };
-            }
-            return null;
-        }).filter(item => item !== null); 
+        const processedData = data
+            .map(item => item.cases)
+            .filter(caseItem => caseItem !== null)
+            .map(caseItem => ({
+                ...caseItem,
+                involved_users: (caseItem.case_users || [])
+                    .map(cu => cu.users)
+                    .filter(u => u !== null)
+                    .map(u => u.name.trim()),
+                case_users: undefined 
+            }));
 
         const response = { ...successResponseBody };
-
         response.message = "Assigned cases retrieved successfully.";
         response.data = processedData;
 
@@ -247,7 +259,6 @@ const getCaseById = async (req, res) => {
         console.error("Get cases by officer error: ", error);
 
         const response = { ...errorResponseBody };
-
         response.message = "Internal Server Error";
         response.err = {
             details: error.message || "An error occurred while fetching the assigned cases."
@@ -255,7 +266,7 @@ const getCaseById = async (req, res) => {
 
         return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
     }
-}
+};
 
 const getCaseByEmailId = async (req, res) => {
     const { email_id } = req.body;
@@ -264,34 +275,57 @@ const getCaseByEmailId = async (req, res) => {
         const { data, error } = await supabase
             .from('case_users')
             .select(`
-                    cases!inner (  
-                        case_id, 
-                        title, 
-                        status, 
-                        deadline, 
-                        priority, 
-                        created_at, 
-                        case_number, 
-                        section_under_ipc,
-                        stage,
-                        under_7_years
-                    ),
-                    users!inner(email_id)
-                `)
+                cases!inner (  
+                    case_id, 
+                    title, 
+                    status, 
+                    deadline, 
+                    priority, 
+                    created_at, 
+                    case_number, 
+                    section_under_ipc,
+                    stage,
+                    under_7_years,
+                    case_users (
+                        users (
+                            name
+                        )
+                    )
+                ),
+                users!inner (
+                    email_id
+                )
+            `)
             .eq('users.email_id', email_id)
             .eq('cases.is_deleted', false);
 
         if (error) throw error;
 
         const processedCaseList = (data || [])
-            .map(item => item.cases) 
+            .map(item => item.cases)
             .filter(caseItem => caseItem !== null)
-            .map(caseItem => ({
-                ...caseItem,
-            }));
+            .map(caseItem => {
+                const involvedUsers = (caseItem.case_users || [])
+                    .map(cu => cu.users)
+                    .filter(u => u !== null)
+                    .map(u => u.name.trim());
+
+                return {
+                    case_id: caseItem.case_id,
+                    title: caseItem.title,
+                    status: caseItem.status,
+                    deadline: caseItem.deadline,
+                    priority: caseItem.priority,
+                    created_at: caseItem.created_at,
+                    case_number: caseItem.case_number,
+                    section_under_ipc: caseItem.section_under_ipc,
+                    stage: caseItem.stage,
+                    under_7_years: caseItem.under_7_years,
+                    involved_users: involvedUsers
+                };
+            });
 
         const response = { ...successResponseBody };
-
         response.message = "Cases retrieved successfully by email.";
         response.data = processedCaseList;
 
@@ -301,7 +335,6 @@ const getCaseByEmailId = async (req, res) => {
         console.error("Get Case by Email Error: ", error);
 
         const response = { ...errorResponseBody };
-
         response.message = "Internal Server Error";
         response.err = {
             details: error.message || "An unexpected error occurred while fetching cases by email."
@@ -309,7 +342,7 @@ const getCaseByEmailId = async (req, res) => {
 
         return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
     }
-}
+};
 
 const updateCase = async (req, res) => {
     try {
@@ -389,8 +422,16 @@ const deleteCase = async (req, res) => {
 
         if (error) throw error;
 
+        const { error: deleteError } = await supabase
+            .from("case_users")
+            .delete()
+            .eq("case_id", caseId)
+            .throwOnError();
+
+        if (deleteError) throw deleteError;
+
         const response = { ...successResponseBody };
-        response.message = "Case deleted successfully (moved to archive).";
+        response.message = "Case deleted successfully.";
         response.data = { case_id: caseId };
 
         return res.status(STATUS.OK).json(response);
@@ -412,7 +453,12 @@ const getCase = async (req, res) => {
     try {
         const columns = `
             case_id, case_number, title, status, priority, deadline, 
-            section_under_ipc, created_at, updated_at, under_7_years, stage
+            section_under_ipc, created_at, updated_at, under_7_years, stage,
+            case_users (
+                users (
+                    name
+                )
+            )
         `;
 
         let query = supabase
@@ -437,11 +483,24 @@ const getCase = async (req, res) => {
             });
         }
 
-        // 6. Return Success
+        // Process assigned officers
+        const processCase = (caseItem) => ({
+            ...caseItem,
+            involved_users: (caseItem.case_users || [])
+                .map(cu => cu.users)
+                .filter(u => u !== null)
+                .map(u => u.name.trim()),
+            case_users: undefined 
+        });
+
+        const processedData = case_number
+            ? processCase(data)           
+            : data.map(processCase);      
+
         return res.status(STATUS.OK).json({
             ...successResponseBody,
             message: case_number ? "Case details retrieved successfully." : "All active cases retrieved successfully.",
-            data: data
+            data: processedData
         });
 
     } catch (error) {
@@ -454,12 +513,52 @@ const getCase = async (req, res) => {
     }
 };
 
+const getDeletedCase = async (req, res) => {
+    try {
+        const { data: deletedCases, error } = await supabase
+            .from("cases")
+            .select("case_number, title")
+            .eq("is_deleted", true)
+            .order("deleted_at", { ascending: false })
+            .throwOnError();
+
+        if (error) throw error;
+
+        // Check if any deleted cases found
+        if (!deletedCases || deletedCases.length === 0) {
+            return res.status(STATUS.NOT_FOUND).json({
+                message: "No deleted cases found."
+            });
+        }
+
+        const response = { ...successResponseBody };
+        response.message = "Deleted cases fetched successfully.";
+        response.data = deletedCases;
+        response.count = deletedCases.length
+
+        return res.status(STATUS.OK).json(response);
+
+    } catch (error) {
+        console.error("getDeleted Case Error:", error);
+
+        if (error.code === 'PGRST116') {
+            errorResponseBody.err = { case_id: "Cases not found." };
+            errorResponseBody.message = "Authentication Failed";
+            return res.status(STATUS.NOT_FOUND).json(errorResponseBody);
+        }
+
+        errorResponseBody.message = "Internal server error during cases deletion retrieval.";
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(errorResponseBody);
+    }
+}
+
 export default {
     createCase,
     getOfficersCaseCount,
-    getCaseById,
+    getCaseByUserID,
     getCaseByEmailId,
     updateCase,
     deleteCase,
-    getCase
+    getCase,
+    getDeletedCase
 }
