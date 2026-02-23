@@ -60,8 +60,8 @@ const validateOtpReq = (req, res, next) => {
             validators: [validateName, validateEmail]
         },
         SIGNIN: {
-            allowedKeys: ["email_id", "purpose"],
-            validators: [validateEmail]
+            allowedKeys: ["email_id", "purpose", "password"],
+            validators: [validateEmail, validatePassword]
         },
         RESET_PASSWORD: {
             allowedKeys: ["email_id", "purpose"],

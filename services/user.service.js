@@ -5,7 +5,7 @@ import { supabase } from "../config/supabase.js";
 import { STATUS, OTP_PURPOSE } from '../utils/constants.js';
 import { errorResponseBody, successResponseBody } from "../utils/responseBody.js";
 import userInterceptor from "../interceptors/user.interceptor.js";
-import { hashOTP, hashPassword } from "../utils/hash.js";
+import { hashOTP, hashPassword, verifyPassword } from "../utils/hash.js";
 
 dotenv.config();
 
@@ -106,7 +106,7 @@ const transporter = nodemailer.createTransport({
 
 const sendOtpService = async (data) => {
     try {
-        const { email_id, purpose, name } = data;
+        const { email_id, purpose, name, password } = data;
         let upperPurpose = purpose.toUpperCase();
 
         await userInterceptor.isNotTempUser({ email_id });
@@ -125,6 +125,14 @@ const sendOtpService = async (data) => {
         if (upperPurpose === OTP_PURPOSE.SIGNUP && !name) {
             throw {
                 err: { name: "Name is required for signup." },
+                code: STATUS.BAD_REQUEST,
+                message: "Validation Error"
+            };
+        }
+
+        if (upperPurpose === OTP_PURPOSE.SIGNIN && !password) {
+            throw {
+                err: { password: "password is required for signin." },
                 code: STATUS.BAD_REQUEST,
                 message: "Validation Error"
             };
@@ -151,8 +159,8 @@ const sendOtpService = async (data) => {
             }
 
             if(upperPurpose === OTP_PURPOSE.SIGNIN) {
-                const isPasswordValid = await verifyPassword(data.password, user.password);
-
+                const isPasswordValid = await verifyPassword(password, userRecord.password);
+                
                 if (!isPasswordValid) {
                     throw {
                         err: { password: "Incorrect password." },

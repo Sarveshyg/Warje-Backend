@@ -586,6 +586,66 @@ const getDeletedCase = async (req, res) => {
     }
 }
 
+const updateDeletedCase = async (req, res) => {
+    try {
+        const { case_id, officer_ids } = req.body;
+
+        // Restore case: is_deleted = false, deleted_at = null
+        const { data: restoredCase, error: caseError } = await supabase
+            .from("cases")
+            .update({
+                is_deleted: false,
+                deleted_at: null
+            })
+            .eq("case_id", case_id)
+            .select()
+            .single();
+
+        if (caseError) throw caseError;
+
+        if (!restoredCase) {
+            return res.status(STATUS.NOT_FOUND).json({
+                success: false,
+                message: "Case not found.",
+                err: { case_id: "No case found with the provided ID." }
+            });
+        }
+
+        // Prepare officer rows for case_users table
+        const caseUsers = officer_ids.map(user_id => ({
+            case_id,
+            user_id
+        }));
+
+        // Insert all officers into case_users
+        const { data: assignedOfficers, error: insertError } = await supabase
+            .from("case_users")
+            .insert(caseUsers)
+            .select();
+
+        if (insertError) throw insertError;
+
+        successResponseBody.data = {
+            case: restoredCase,
+            assigned_officers: assignedOfficers.map(officer => officer.user_id)
+        };
+        successResponseBody.message = "Case restored and officers assigned successfully.";
+
+        return res.status(STATUS.OK).json(successResponseBody);
+
+    } catch (error) {
+        console.error("updateDeletedCase Controller Error:", error);
+
+        if (error.code) {
+            return res.status(error.code).json(error);
+        }
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: "Something went wrong."
+        });
+    }
+};
+
 export default {
     createCase,
     getOfficersCaseCount,
@@ -594,5 +654,6 @@ export default {
     updateCase,
     deleteCase,
     getCase,
-    getDeletedCase
+    getDeletedCase,
+    updateDeletedCase
 }

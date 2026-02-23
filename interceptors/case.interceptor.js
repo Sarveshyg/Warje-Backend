@@ -389,7 +389,7 @@ const validateCaseUpdate = async (req, res, next) => {
         req.validCaseUpdates = updates;
         req.targetCaseNumber = case_number;
         req.targetCaseId = case_id;
-        req.isAdmin = adminCheck;                        
+        req.isAdmin = adminCheck;
         req.validAssignedOfficers = hasOfficers ? assigned_officers : null;
 
         next();
@@ -469,6 +469,87 @@ const getDeletedCaseValidate = async (req, res, next) => {
     next();
 };
 
+const updateDeletedCaseValidate = async (req, res, next) => {
+    try {
+        const currentUser = req.user;
+        const { case_id, officer_ids } = req.body;
+
+        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+        if (!isUserAdmin) {
+            return res.status(STATUS.FORBIDDEN).json({
+                ...errorResponseBody,
+                message: "Access denied. Admin privileges required.",
+                err: { role: "Insufficient permissions" }
+            });
+        }
+
+        if (!case_id) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                ...errorResponseBody,
+                message: "Validation Failed",
+                err: { case_id: "case_id is required." }
+            });
+        }
+
+        if (typeof case_id !== "string" || !UUIDCASE.CASE.test(case_id)) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                ...errorResponseBody,
+                message: "Validation Failed",
+                err: { case_id: "case_id must be a valid UUID." }
+            });
+        }
+
+        if (!officer_ids) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                ...errorResponseBody,
+                message: "Validation Failed",
+                err: { officer_ids: "officer_ids is required." }
+            });
+        }
+
+        if (!Array.isArray(officer_ids)) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                ...errorResponseBody,
+                message: "Validation Failed",
+                err: { officer_ids: "officer_ids must be an array." }
+            });
+        }
+
+        if (officer_ids.length === 0) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                ...errorResponseBody,
+                message: "Validation Failed",
+                err: { officer_ids: "officer_ids must not be empty." }
+            });
+        }
+
+        if (!officer_ids.every(id => typeof id === "string" && UUIDCASE.CASE.test(id))) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                ...errorResponseBody,
+                message: "Validation Failed",
+                err: { officer_ids: "Each officer_id must be a valid UUID." }
+            });
+        }
+
+        next();
+
+    } catch (error) {
+        if (error.code) {
+            return res.status(error.code).json({
+                ...errorResponseBody,
+                message: error.message,
+                err: error.err
+            });
+        }
+
+        console.error("updateDeletedCaseValidate Middleware Error:", error);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+            ...errorResponseBody,
+            message: "Internal server error during verification validation."
+        });
+    }
+};
+
 export default {
     validateCase,
     validateGetOfficersCasesCount,
@@ -477,5 +558,6 @@ export default {
     validateCaseUpdate,
     validateCaseDeletion,
     validateGetCase,
-    getDeletedCaseValidate
+    getDeletedCaseValidate,
+    updateDeletedCaseValidate
 };

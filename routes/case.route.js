@@ -37,6 +37,15 @@ router.get(
     caseController.getDeletedCase
 );
 
+// make deleted case to valid case
+router.patch(
+    "/deleted-case",
+    // caseSearchLimiter,
+    validateStrictBody(["case_id", "officer_ids"]),
+    caseIntercetor.updateDeletedCaseValidate,
+    caseController.updateDeletedCase
+)
+
 // get users case count with user_id or without user id which includes both status also {using query_param}
 //{ req.query.user_id, req.query.status };
 router.get(
