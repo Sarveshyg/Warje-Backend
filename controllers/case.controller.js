@@ -551,7 +551,7 @@ const getDeletedCase = async (req, res) => {
     try {
         const { data: deletedCases, error } = await supabase
             .from("cases")
-            .select("case_number, title")
+            .select("case_number, title, priority, section_under_ipc, deadline, status")
             .eq("is_deleted", true)
             .order("deleted_at", { ascending: false })
             .throwOnError();
