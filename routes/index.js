@@ -7,8 +7,6 @@ const router = express.Router();
 
 
 router.use("/auth", authRoutes);
-
-// router.use(checkIfDeleted);
 router.use("/user", userRoutes);
 router.use("/case", caseRoutes);
 

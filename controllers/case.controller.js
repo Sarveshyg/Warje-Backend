@@ -1,4 +1,5 @@
 import { supabase } from "../config/supabase.js"
+import { isAdminForBack } from "../interceptors/user.interceptor.js";
 import { STATUS } from "../utils/constants.js";
 import { errorResponseBody, successResponseBody } from "../utils/responseBody.js";
 
@@ -42,6 +43,30 @@ const createCase = async (req, res) => {
             }
 
             officerIds = officers.map(officer => officer.user_id);
+
+            const adminCheck = await isAdminForBack({ user_id: req.user.user_id });
+
+            if (!adminCheck) {
+                // Get current user's email from users table
+                const { data: currentUserData, error: userError } = await supabase
+                    .from("users")
+                    .select("email_id")
+                    .eq("user_id", req.user.user_id)
+                    .single();
+
+                if (userError) throw userError;
+
+                const isSelfIncluded = cleanEmails.includes(currentUserData.email_id.toLowerCase().trim());
+
+                if (!isSelfIncluded) {
+                    const response = { ...errorResponseBody };
+                    response.message = "Validation Failed";
+                    response.err = {
+                        assigned_officer_emails: "You must include yourself as an assigned officer."
+                    };
+                    return res.status(STATUS.FORBIDDEN).json(response);
+                }
+            }
         }
 
         const newCaseData = {
@@ -246,7 +271,7 @@ const getCaseByUserID = async (req, res) => {
                     .map(cu => cu.users)
                     .filter(u => u !== null)
                     .map(u => u.name.trim()),
-                case_users: undefined 
+                case_users: undefined
             }));
 
         const response = { ...successResponseBody };
@@ -348,56 +373,65 @@ const updateCase = async (req, res) => {
     try {
         const updates = req.validCaseUpdates;
         const caseNumber = req.targetCaseNumber;
+        const caseId = req.targetCaseId;
+        const assignedOfficers = req.validAssignedOfficers;
 
-        if (!updates || !caseNumber) {
-            const response = { ...errorResponseBody };
-            response.message = "Internal Server Error";
-            response.err = { details: "Middleware failed to pass update data." };
-            return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
-        }
-
+        // Update case fields
         const { data: updatedCase, error } = await supabase
             .from("cases")
             .update(updates)
             .eq("case_number", caseNumber)
             .eq('is_deleted', false)
-            .select("case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage")
+            .select("case_id, case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage")
             .single();
 
         if (error) throw error;
 
-        if (!updatedCase) {
-            const response = { ...errorResponseBody };
-            response.message = "Update Failed";
-            response.err = {
-                case_number: `Case with number '${caseNumber}' not found.`
-            };
-            return res.status(STATUS.NOT_FOUND).json(response);
+        // Update assigned officers if provided
+        if (assignedOfficers) {
+            const { error: deleteError } = await supabase
+                .from("case_users")
+                .delete()
+                .eq("case_id", updatedCase.case_id);
+
+            if (deleteError) throw deleteError;
+
+            const { error: insertError } = await supabase
+                .from("case_users")
+                .insert(assignedOfficers.map(user_id => ({
+                    case_id: updatedCase.case_id,
+                    user_id
+                })));
+
+            if (insertError) throw insertError;
         }
+
+        // Fetch involved users
+        const { data: caseUsers } = await supabase
+            .from("case_users")
+            .select("users(name)")
+            .eq("case_id", updatedCase.case_id);
+
+        const involved_users = (caseUsers || [])
+            .map(cu => cu.users)
+            .filter(u => u !== null)
+            .map(u => u.name.trim());
 
         const response = { ...successResponseBody };
         response.message = "Case updated successfully.";
-        response.data = updatedCase;
+        response.data = { ...updatedCase, involved_users };
 
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Update Case Error:", error);
-
-        const response = { ...errorResponseBody };
-
-        if (error.code === 'PGRST102') {
-            response.message = "Update Failed";
-            response.err = { details: "Empty update payload." };
-            return res.status(STATUS.BAD_REQUEST).json(response);
-        }
-
-        response.message = "Internal Server Error";
-        response.err = { details: error.message };
-
-        return res.status(STATUS.INTERNAL_SERVER_ERROR).json(response);
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+            ...errorResponseBody,
+            message: "Internal Server Error",
+            err: { details: error.message }
+        });
     }
-}
+};
 
 const deleteCase = async (req, res) => {
     try {
@@ -490,12 +524,12 @@ const getCase = async (req, res) => {
                 .map(cu => cu.users)
                 .filter(u => u !== null)
                 .map(u => u.name.trim()),
-            case_users: undefined 
+            case_users: undefined
         });
 
         const processedData = case_number
-            ? processCase(data)           
-            : data.map(processCase);      
+            ? processCase(data)
+            : data.map(processCase);
 
         return res.status(STATUS.OK).json({
             ...successResponseBody,

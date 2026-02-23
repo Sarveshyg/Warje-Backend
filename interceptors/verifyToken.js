@@ -5,7 +5,6 @@ import { supabase } from "../config/supabase.js";
 export async function verifyToken(req, res, next) {
     const authHeader = req.headers.authorization;
 
-    // 1. Check if header exists
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Authentication failed: No token provided' });
     }
@@ -56,7 +55,6 @@ export async function verifyToken(req, res, next) {
         return res.status(500).json({ error: "Internal server error" });
     }
 }
-
 
 export default {
     verifyToken

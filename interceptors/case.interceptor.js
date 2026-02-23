@@ -303,87 +303,105 @@ const isUserInCase = async (data) => {
 
 const validateCaseUpdate = async (req, res, next) => {
     const currentUser = req.user;
-    const { case_id, case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage } = req.body;
+    const { case_id, case_number, title, status, priority, deadline, section_under_ipc, under_7_years, stage, assigned_officers } = req.body;
 
     if (!case_number) {
         const response = { ...errorResponseBody };
         response.message = "Validation Failed";
-        response.err = {
-            case_number: "Case number is required to perform an update."
-        };
+        response.err = { case_number: "Case number is required to perform an update." };
         return res.status(STATUS.BAD_REQUEST).json(response);
     }
 
-    if (!case_id) {
+    if (!case_id || !UUIDCASE.CASE.test(case_id)) {
         const response = { ...errorResponseBody };
         response.message = "Validation Failed";
         response.err = {
-            case_number: "Case id is required to perform an update."
-        };
-        return res.status(STATUS.BAD_REQUEST).json(response);
-    }
-
-    const { data: caseData, error } = await supabase
-        .from("cases")
-        .select("case_id, case_number")
-        .eq("case_id", case_id)
-        .eq("case_number", case_number)
-        .maybeSingle();
-
-    if (error) throw error;
-
-    if (!caseData) {
-        const response = { ...errorResponseBody };
-        response.message = "Validation Failed";
-        response.err = {
-            case_number: "Case number and Case ID do not belong to the same case."
+            case_id: !case_id
+                ? "Case ID is required to perform an update."
+                : "Invalid Case ID format."
         };
         return res.status(STATUS.BAD_REQUEST).json(response);
     }
 
     try {
+        // Check case_id and case_number belong to same case
+        const { data: caseData, error } = await supabase
+            .from("cases")
+            .select("case_id, case_number")
+            .eq("case_id", case_id)
+            .eq("case_number", case_number)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!caseData) {
+            const response = { ...errorResponseBody };
+            response.message = "Validation Failed";
+            response.err = { case_number: "Case number and Case ID do not belong to the same case." };
+            return res.status(STATUS.BAD_REQUEST).json(response);
+        }
+
+        // Check authority — must be admin OR in case
         const adminCheck = await isAdminForBack({ user_id: currentUser.user_id });
         const assignedCheck = await isUserInCase({ case_id: case_id, user_id: currentUser.user_id });
 
         if (!adminCheck && !assignedCheck) {
             const response = { ...errorResponseBody };
             response.message = "Validation Failed";
-            response.err = {
-                case_number: "You don't have privileges"
-            };
+            response.err = { details: "You don't have privileges to update this case." };
             return res.status(STATUS.FORBIDDEN).json(response);
         }
+
+        // Build updates object
+        const updates = {};
+        if (title) updates.title = title;
+        if (status) updates.status = status;
+        if (priority) updates.priority = priority;
+        if (deadline) updates.deadline = deadline;
+        if (section_under_ipc) updates.section_under_ipc = section_under_ipc;
+        if (under_7_years !== undefined) updates.under_7_years = under_7_years;
+        if (stage !== undefined && stage >= 1) updates.stage = stage;
+
+        // Check at least one field or officer is provided
+        const hasOfficers = Array.isArray(assigned_officers) && assigned_officers.length > 0;
+
+        if (Object.keys(updates).length === 0 && !hasOfficers) {
+            const response = { ...errorResponseBody };
+            response.message = "Validation Failed";
+            response.err = {
+                details: "No valid fields provided for update. Please provide at least one field."
+            };
+            return res.status(STATUS.BAD_REQUEST).json(response);
+        }
+
+        // If officers provided and not admin — must include self
+        if (hasOfficers && !adminCheck) {
+            const isSelfIncluded = assigned_officers.includes(currentUser.user_id);
+            if (!isSelfIncluded) {
+                const response = { ...errorResponseBody };
+                response.message = "Validation Failed";
+                response.err = { assigned_officers: "You cannot remove yourself from the case." };
+                return res.status(STATUS.FORBIDDEN).json(response);
+            }
+        }
+
+        // Pass everything to controller via req
+        req.validCaseUpdates = updates;
+        req.targetCaseNumber = case_number;
+        req.targetCaseId = case_id;
+        req.isAdmin = adminCheck;                        
+        req.validAssignedOfficers = hasOfficers ? assigned_officers : null;
+
+        next();
+
     } catch (error) {
-        console.error("Permission Check Error:", error);
+        console.error("Validate Case Update Error:", error);
         return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
             ...errorResponseBody,
             message: "Internal Server Error",
             err: { details: error.message }
         });
     }
-
-    const updates = {};
-    if (title) updates.title = title;
-    if (status) updates.status = status;
-    if (priority) updates.priority = priority;
-    if (deadline) updates.deadline = deadline;
-    if (section_under_ipc) updates.section_under_ipc = section_under_ipc;
-    if (under_7_years !== undefined) updates.under_7_years = under_7_years
-    if (stage !== undefined && stage >= 1) updates.stage = stage
-
-    if (Object.keys(updates).length === 0) {
-        const response = { ...errorResponseBody };
-        response.message = "Validation Failed";
-        response.err = {
-            details: "No valid fields provided for update. Please provide at least one field (title, status, priority, deadline, under_7_years, stage, or section_under_ipc)."
-        };
-        return res.status(STATUS.BAD_REQUEST).json(response);
-    }
-
-    req.validCaseUpdates = updates;
-    req.targetCaseNumber = case_number;
-
-    next();
 };
 
 const validateCaseDeletion = async (req, res, next) => {
