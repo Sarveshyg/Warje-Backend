@@ -134,7 +134,7 @@ const sendOtpService = async (data) => {
 
         const { data: userRecord } = await supabase
             .from("users")
-            .select("name")
+            .select("name, password")
             .eq("email_id", email_id)
             .maybeSingle(); 
 
@@ -148,6 +148,18 @@ const sendOtpService = async (data) => {
                     code: STATUS.NOT_FOUND,
                     message: "Resource Not Found"
                 };
+            }
+
+            if(upperPurpose === OTP_PURPOSE.SIGNIN) {
+                const isPasswordValid = await verifyPassword(data.password, user.password);
+
+                if (!isPasswordValid) {
+                    throw {
+                        err: { password: "Incorrect password." },
+                        code: STATUS.UNAUTHORISED, 
+                        message: "Authentication Failed"
+                    };
+                }
             }
             userName = userRecord.name; 
         }

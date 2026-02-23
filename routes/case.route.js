@@ -37,7 +37,8 @@ router.get(
     caseController.getDeletedCase
 );
 
-// get users case count with user_id or without user id which includes both status also
+// get users case count with user_id or without user id which includes both status also {using query_param}
+//{ req.query.user_id, req.query.status };
 router.get(
     "/count",
     // caseSearchLimiter,

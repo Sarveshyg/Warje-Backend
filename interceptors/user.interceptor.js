@@ -328,7 +328,6 @@ const validateUserUpdate = (req, res, next) => {
 };
 
 const isNotTempUser = async (data) => {
-    console.log(data);
     const { email_id } = data;
 
     const { data: tempUser, error } = await supabase
