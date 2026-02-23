@@ -170,17 +170,17 @@ const validateGetOfficersCasesCount = async (req, res, next) => {
     }
 
     try {
-        const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
+        // const isUserAdmin = await isAdminForBack({ user_id: currentUser.user_id });
 
-        if (!isUserAdmin) {
-            throw {
-                code: STATUS.FORBIDDEN,
-                message: "Access denied. Admin privileges required.",
-                err: { role: "Insufficient permissions" }
-            }
-        }
+        // if (!isUserAdmin) {
+        //     throw {
+        //         code: STATUS.FORBIDDEN,
+        //         message: "Access denied. Admin privileges required.",
+        //         err: { role: "Insufficient permissions" }
+        //     }
+        // }
 
-        if (officerId) await isUser({ user_id: officerId });
+        // if (officerId) await isUser({ user_id: officerId });
         next();
     }
     catch (error) {

@@ -31,8 +31,21 @@ const signin = async(req, res) => {
     try {
         const data = req.body;
         
-        const result = await authService.signinUser(data);
+        const { user, token } = await authService.signinUser(data);
 
+        const isWebClient = req.headers["x-client-type"] === "web";
+
+        if(isWebClient) {
+            res.cookie("auth_token", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "Strict",
+                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+            });
+            successResponseBody.data = user;  // Website
+        } else {
+            successResponseBody.data = { ...user, token }; // app
+        }
         successResponseBody.data = result;
         successResponseBody.message = "User sign in successfully.";
         

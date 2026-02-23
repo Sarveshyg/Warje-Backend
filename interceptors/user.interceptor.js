@@ -371,14 +371,6 @@ export const isAdminForBack = async (data) => {
             .single()
             .throwOnError();
 
-        // if (user && user.role !== USER_ROLE.ADMIN) {
-        //     throw {
-        //         code: STATUS.FORBIDDEN,
-        //         message: "Access denied. Admin privileges required.",
-        //         err: { role: "Insufficient permissions" }
-        //     }
-        // }
-
         return user.role === USER_ROLE.ADMIN; // true for admin otherwise, false
 
     } catch (error) {

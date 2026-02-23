@@ -168,10 +168,8 @@ const signinUser = async (data) => {
 
         delete user.password;
         delete user.is_deleted;
-        user["token"] = token;
-
-        console.log(user);
-        return user;
+        
+        return { user, token };
 
     } catch (error) {
         console.log(error);
