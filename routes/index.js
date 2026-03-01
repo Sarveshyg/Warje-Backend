@@ -2,6 +2,7 @@ import express from "express";
 import userRoutes from "./user.route.js";
 import caseRoutes from "./case.route.js";
 import authRoutes from "./auth.route.js";
+import reportRoutes from "./report.route.js";
 
 const router = express.Router();
 
@@ -9,5 +10,6 @@ const router = express.Router();
 router.use("/auth", authRoutes);
 router.use("/user", userRoutes);
 router.use("/case", caseRoutes);
+router.use("/report", reportRoutes);
 
 export default router;
