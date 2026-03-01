@@ -133,7 +133,7 @@ const getReport = async (req, res) => {
                 report,
                 assigned_officers: officers.map(o => o.users)
             };
-            return res.status(STATUS.SUCCESS).json(response);
+            return res.status(STATUS.OK).json(response);
 
         } else {
             // Get all reports
@@ -148,7 +148,7 @@ const getReport = async (req, res) => {
             const response = { ...successResponseBody };
             response.message = "Reports fetched successfully.";
             response.body = reports;
-            return res.status(STATUS.SUCCESS).json(response);
+            return res.status(STATUS.OK).json(response);
         }
 
     } catch (error) {
@@ -176,7 +176,7 @@ const getReportByUserId = async (req, res) => {
             const response = { ...successResponseBody };
             response.message = "No reports found for this officer.";
             response.body = [];
-            return res.status(STATUS.SUCCESS).json(response);
+            return res.status(STATUS.OK).json(response);
         }
 
         const reportIds = reportUsers.map(ru => ru.report_id);
@@ -193,7 +193,7 @@ const getReportByUserId = async (req, res) => {
         const response = { ...successResponseBody };
         response.message = "Reports fetched successfully.";
         response.body = reports;
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Get Report By User ID Error:", error);
@@ -235,7 +235,7 @@ const getReportByEmailId = async (req, res) => {
             const response = { ...successResponseBody };
             response.message = "No reports found for this officer.";
             response.body = [];
-            return res.status(STATUS.SUCCESS).json(response);
+            return res.status(STATUS.OK).json(response);
         }
 
         const reportIds = reportUsers.map(ru => ru.report_id);
@@ -252,7 +252,7 @@ const getReportByEmailId = async (req, res) => {
         const response = { ...successResponseBody };
         response.message = "Reports fetched successfully.";
         response.body = reports;
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Get Report By Email Error:", error);
@@ -280,7 +280,7 @@ const getOfficersReportsCount = async (req, res) => {
             const response = { ...successResponseBody };
             response.message = "Report count fetched.";
             response.body = { count: 0 };
-            return res.status(STATUS.SUCCESS).json(response);
+            return res.status(STATUS.OK).json(response);
         }
 
         const reportIds = reportUsers.map(ru => ru.report_id);
@@ -302,7 +302,7 @@ const getOfficersReportsCount = async (req, res) => {
         const response = { ...successResponseBody };
         response.message = "Report count fetched.";
         response.body = { count };
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Get Report Count Error:", error);
@@ -379,7 +379,7 @@ const updateReport = async (req, res) => {
             report: updatedReport,
             assigned_officers: officers.map(o => o.users)
         };
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Update Report Error:", error);
@@ -409,7 +409,7 @@ const deleteReport = async (req, res) => {
         const response = { ...successResponseBody };
         response.message = "Report deleted successfully.";
         response.body = { report_number: reportNumber };
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Delete Report Error:", error);
@@ -433,7 +433,7 @@ const getDeletedReports = async (req, res) => {
         const response = { ...successResponseBody };
         response.message = "Deleted reports fetched successfully.";
         response.body = reports;
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Get Deleted Reports Error:", error);
@@ -494,7 +494,7 @@ const updateDeletedReport = async (req, res) => {
         const response = { ...successResponseBody };
         response.message = "Report restored successfully.";
         response.body = restoredReport;
-        return res.status(STATUS.SUCCESS).json(response);
+        return res.status(STATUS.OK).json(response);
 
     } catch (error) {
         console.error("Update Deleted Report Error:", error);

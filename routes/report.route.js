@@ -29,7 +29,6 @@ router.post(
 // get all deleted reports 
 router.get(
     "/deleted-report",
-    validateStrictBody([""]),
     reportController.getDeletedReports
 );
 
@@ -45,7 +44,6 @@ router.patch(
 //{ req.query.user_id, req.query.status };
 router.get(
     "/count",
-    validateStrictBody([""]),
     reportInterceptor.validateGetOfficersReportsCount,
     reportController.getOfficersReportsCount
 );
@@ -53,7 +51,6 @@ router.get(
 // {can get all reports or specific report by query params-> report_number='___'}
 router.get(
     "/",
-    validateStrictBody([""]),
     reportInterceptor.validateGetReport,
     reportController.getReport
 )
@@ -61,7 +58,6 @@ router.get(
 // get report by user-id
 router.get(
     "/:user_id",
-    validateStrictBody([""]),
     reportInterceptor.validateGetReportId,
     reportController.getReportByUserId
 );
@@ -76,7 +72,6 @@ router.patch(
 // delete report
 router.delete(
     "/:report_number",
-    validateStrictBody([""]),
     reportInterceptor.validateReportDeletion,
     reportController.deleteReport
 );
