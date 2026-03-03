@@ -2,6 +2,19 @@ import { supabase } from "../config/supabase.js";
 import { CASE_PRIORITY, CASE_STATUS, STATUS } from "../utils/constants.js";
 import { successResponseBody, errorResponseBody } from "../utils/responseBody.js";
 
+const formatReportResponse = (report, assignedOfficers = null) => {
+    const formatted = { ...report };
+    delete formatted.created_at;
+    delete formatted.updated_at;
+    delete formatted.is_deleted;
+    delete formatted.deleted_at;
+
+    if (assignedOfficers) {
+        formatted.assigned_officers = assignedOfficers;
+    }
+    return formatted;
+};
+
 const createReport = async (req, res) => {
     try {
         const { report_number, title, priority, deadline, assigned_officer_emails } = req.body;
@@ -73,10 +86,10 @@ const createReport = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Report created successfully.";
-        response.body = {
-            report: createdReport,
-            assigned_officers: officers.map(o => ({ user_id: o.user_id, email_id: o.email_id }))
-        };
+
+        const formattedReport = formatReportResponse(createdReport, officers.map(o => ({ user_id: o.user_id, email_id: o.email_id })));
+        response.data = [formattedReport];
+        delete response.body; // Ensure clean response
 
         return res.status(STATUS.CREATED).json(response);
 
@@ -129,10 +142,11 @@ const getReport = async (req, res) => {
 
             const response = { ...successResponseBody };
             response.message = "Report fetched successfully.";
-            response.body = {
-                report,
-                assigned_officers: officers.map(o => o.users)
-            };
+
+            const formattedReport = formatReportResponse(report, officers.map(o => o.users));
+            response.data = [formattedReport];
+            delete response.body;
+
             return res.status(STATUS.OK).json(response);
 
         } else {
@@ -147,7 +161,10 @@ const getReport = async (req, res) => {
 
             const response = { ...successResponseBody };
             response.message = "Reports fetched successfully.";
-            response.body = reports;
+
+            response.data = reports.map(r => formatReportResponse(r));
+            delete response.body;
+
             return res.status(STATUS.OK).json(response);
         }
 
@@ -175,7 +192,8 @@ const getReportByUserId = async (req, res) => {
         if (!reportUsers || reportUsers.length === 0) {
             const response = { ...successResponseBody };
             response.message = "No reports found for this officer.";
-            response.body = [];
+            response.data = [];
+            delete response.body;
             return res.status(STATUS.OK).json(response);
         }
 
@@ -192,7 +210,8 @@ const getReportByUserId = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Reports fetched successfully.";
-        response.body = reports;
+        response.data = reports.map(r => formatReportResponse(r));
+        delete response.body;
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
@@ -234,7 +253,8 @@ const getReportByEmailId = async (req, res) => {
         if (!reportUsers || reportUsers.length === 0) {
             const response = { ...successResponseBody };
             response.message = "No reports found for this officer.";
-            response.body = [];
+            response.data = [];
+            delete response.body;
             return res.status(STATUS.OK).json(response);
         }
 
@@ -251,7 +271,8 @@ const getReportByEmailId = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Reports fetched successfully.";
-        response.body = reports;
+        response.data = reports.map(r => formatReportResponse(r));
+        delete response.body;
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
@@ -279,7 +300,8 @@ const getOfficersReportsCount = async (req, res) => {
         if (!reportUsers || reportUsers.length === 0) {
             const response = { ...successResponseBody };
             response.message = "Report count fetched.";
-            response.body = { count: 0 };
+            response.data = [{ count: 0 }];
+            delete response.body;
             return res.status(STATUS.OK).json(response);
         }
 
@@ -301,7 +323,8 @@ const getOfficersReportsCount = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Report count fetched.";
-        response.body = { count };
+        response.data = [{ count }];
+        delete response.body;
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
@@ -375,10 +398,11 @@ const updateReport = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Report updated successfully.";
-        response.body = {
-            report: updatedReport,
-            assigned_officers: officers.map(o => o.users)
-        };
+
+        const formattedReport = formatReportResponse(updatedReport, officers.map(o => o.users));
+        response.data = [formattedReport];
+        delete response.body;
+
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
@@ -408,7 +432,8 @@ const deleteReport = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Report deleted successfully.";
-        response.body = { report_number: reportNumber };
+        response.data = [{ report_number: reportNumber, is_deleted: true }];
+        delete response.body;
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
@@ -432,7 +457,8 @@ const getDeletedReports = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Deleted reports fetched successfully.";
-        response.body = reports;
+        response.data = reports.map(r => formatReportResponse(r));
+        delete response.body;
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
@@ -493,7 +519,8 @@ const updateDeletedReport = async (req, res) => {
 
         const response = { ...successResponseBody };
         response.message = "Report restored successfully.";
-        response.body = restoredReport;
+        response.data = [formatReportResponse(restoredReport)];
+        delete response.body;
         return res.status(STATUS.OK).json(response);
 
     } catch (error) {
